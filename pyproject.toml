@@ -1,0 +1,22 @@
+[project]
+name = "tattletale"
+version = "0.1.0.dev0"
+description = "Origin tracing for agent-generated claims. Verifies quotation, not correctness."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.10"
+# Zero runtime dependencies is a design constraint (spec §8), not an accident.
+dependencies = []
+
+[project.optional-dependencies]
+dev = ["pytest>=8.2"]
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
