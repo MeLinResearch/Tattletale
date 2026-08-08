@@ -1,0 +1,18 @@
+SERVICES AGREEMENT (SAMPLE — fictional document for the Tattletale demo)
+
+1. Term. This agreement begins on the effective date and renews
+automatically every 12 months unless either party gives sixty days
+written notice of non-renewal.
+
+2. Fees. Client shall pay a monthly service fee of $4,500, invoiced in
+advance. Late payments accrue interest at one percent per month.
+
+3. Confidentiality. Each party shall protect the other party's
+confidential information with at least the same degree of care it uses
+for its own, and no less than reasonable care.
+
+4. Liability. Neither party's aggregate liability shall exceed the fees
+paid in the twelve months preceding the claim.
+
+5. Termination. Either party may terminate for material breach if the
+breach remains uncured thirty days after written notice.
