@@ -9,9 +9,6 @@ import pytest
 
 from tattletale import Claim, Monitor
 
-STEP_5 = pytest.mark.skip(reason="Build step 5 not implemented: JSON report (spec §7)")
-
-
 def test_header_shows_total_claims_and_failures():
     monitor = Monitor({"contract.txt": "real clause"})
     monitor.check(
@@ -87,13 +84,55 @@ def test_broken_lineage_is_not_reported_as_originated_here():
     assert "originated here" not in report
 
 
-@STEP_5
 def test_json_report_parses_and_carries_source_hashes():
-    ...
+    import json
+
+    monitor = Monitor({"contract.txt": "  real\nclause  "})
+
+    payload = json.loads(monitor.report(format="json"))
+
+    assert payload["sources"]["contract.txt"] == {
+        "sha256": monitor._source_hashes["contract.txt"],
+        "normalized": True,
+    }
 
 
-@STEP_5
 def test_json_report_includes_passing_claims():
     """JSON carries the same content as text plus every passing claim
     (spec §7)."""
-    ...
+    import json
+
+    monitor = Monitor({"contract.txt": "real clause"})
+    monitor.check("researcher", [Claim("c_001", "real clause", "contract.txt")])
+
+    payload = json.loads(monitor.report(format="json"))
+
+    assert payload["summary"] == {"claims": 1, "failed": 0}
+    assert payload["results"] == [
+        {
+            "agent": "researcher",
+            "claim_id": "c_001",
+            "derived_from": None,
+            "origin_agent": None,
+            "origin_claim_id": None,
+            "quote": "real clause",
+            "reason": None,
+            "source": "contract.txt",
+            "status": "PASSED",
+        }
+    ]
+
+
+def test_json_report_is_deterministic_and_includes_zero_claim_agents():
+    import json
+
+    monitor = Monitor({"contract.txt": "real clause"})
+    monitor.check("summarizer", [])
+
+    first = monitor.report(format="json")
+    second = monitor.report(format="json")
+
+    assert first == second
+    assert json.loads(first)["agents"] == [
+        {"agent": "summarizer", "claims": 0, "failed": 0}
+    ]
