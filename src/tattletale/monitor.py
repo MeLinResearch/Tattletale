@@ -7,7 +7,11 @@ and the report renderers. A Monitor lives for one run — no persistence
 
 from __future__ import annotations
 
+from dataclasses import replace
+
+from .lineage import BrokenLineageError, find_origin
 from .models import (
+    BROKEN_LINEAGE,
     EMPTY_QUOTE,
     FAILED,
     NOT_IN_SOURCE,
@@ -52,7 +56,7 @@ class Monitor:
         in spec §5.2; origin attribution follows the lineage walk in spec §6
         (build step 3).
         """
-        batch_results = []
+        provisional_results: list[ClaimResult] = []
 
         for claim in claims:
             quote = normalize(claim.text)
@@ -72,8 +76,42 @@ class Monitor:
                 reason=reason,
             )
             self._claims[claim.id] = (agent, claim)
-            self._results.append(result)
+            provisional_results.append(result)
+
+        claims_by_id = {
+            claim_id: recorded_claim
+            for claim_id, (_, recorded_claim) in self._claims.items()
+        }
+        results_by_id = {
+            result.claim_id: result for result in self._results + provisional_results
+        }
+        batch_results: list[ClaimResult] = []
+
+        for claim, result in zip(claims, provisional_results):
+            if result.status == FAILED or claim.derived_from is not None:
+                try:
+                    origin_agent, origin_claim_id = find_origin(
+                        claim, claims_by_id, results_by_id
+                    )
+                except BrokenLineageError as broken:
+                    result = replace(
+                        result,
+                        status=FAILED,
+                        reason=BROKEN_LINEAGE,
+                        origin_agent=broken.agent,
+                        origin_claim_id=broken.claim_id,
+                    )
+                else:
+                    if result.status == FAILED:
+                        result = replace(
+                            result,
+                            origin_agent=origin_agent,
+                            origin_claim_id=origin_claim_id,
+                        )
+
             batch_results.append(result)
+
+        self._results.extend(batch_results)
 
         return batch_results
 
