@@ -21,6 +21,7 @@ from .models import (
     ClaimResult,
 )
 from .normalize import normalize, source_hash
+from .report import render_text
 
 
 class Monitor:
@@ -48,6 +49,7 @@ class Monitor:
 
         self._claims: dict[str, tuple[str, Claim]] = {}
         self._results: list[ClaimResult] = []
+        self._agents: list[str] = []
 
     def check(self, agent: str, claims: list[Claim]) -> list[ClaimResult]:
         """Validate each claim, record the result, return the result list.
@@ -56,6 +58,9 @@ class Monitor:
         in spec §5.2; origin attribution follows the lineage walk in spec §6
         (build step 3).
         """
+        if agent not in self._agents:
+            self._agents.append(agent)
+
         provisional_results: list[ClaimResult] = []
 
         for claim in claims:
@@ -122,4 +127,16 @@ class Monitor:
         with zero failures still appear. JSON carries the same content plus
         the source hash and every passing claim.
         """
-        raise NotImplementedError("Build steps 4-5: report (spec §7)")
+        if format == "text":
+            claims_by_id = {
+                claim_id: claim for claim_id, (_, claim) in self._claims.items()
+            }
+            return render_text(
+                self._results,
+                self._source_hashes,
+                claims_by_id,
+                self._agents,
+            )
+        if format == "json":
+            raise NotImplementedError("Build step 5: JSON report (spec §7)")
+        raise ValueError("format must be 'text' or 'json'")
