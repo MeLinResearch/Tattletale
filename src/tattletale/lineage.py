@@ -9,6 +9,15 @@ from __future__ import annotations
 from .models import Claim, ClaimResult
 
 
+class BrokenLineageError(Exception):
+    """Internal signal carrying the last claim whose submitter is known."""
+
+    def __init__(self, agent: str, claim_id: str) -> None:
+        super().__init__(f"Broken lineage after {agent} ({claim_id})")
+        self.agent = agent
+        self.claim_id = claim_id
+
+
 def find_origin(
     claim: Claim,
     claims_by_id: dict[str, Claim],
@@ -26,4 +35,23 @@ def find_origin(
        the origin is the child, not the parent. A modified quote is a new
        claim. (This case is the one that earns the name.)
     """
-    raise NotImplementedError("Build step 3: lineage walk (spec §6)")
+    current_claim = claim
+    current_result = results_by_id[claim.id]
+
+    for _ in range(len(claims_by_id)):
+        parent_id = current_claim.derived_from
+        if parent_id is None:
+            return current_result.agent, current_claim.id
+
+        parent_claim = claims_by_id.get(parent_id)
+        parent_result = results_by_id.get(parent_id)
+        if parent_claim is None or parent_result is None:
+            raise BrokenLineageError(current_result.agent, current_claim.id)
+
+        if current_result.status == "FAILED" and parent_result.status == "PASSED":
+            return current_result.agent, current_claim.id
+
+        current_claim = parent_claim
+        current_result = parent_result
+
+    raise BrokenLineageError(current_result.agent, current_claim.id)
