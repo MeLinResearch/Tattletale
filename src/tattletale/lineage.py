@@ -7,6 +7,16 @@ walk needs only the claims and results already recorded by the Monitor.
 from __future__ import annotations
 
 from .models import Claim, ClaimResult
+from .normalize import normalize
+
+
+class BrokenLineageError(Exception):
+    """Internal signal carrying the last claim whose submitter is known."""
+
+    def __init__(self, agent: str, claim_id: str) -> None:
+        super().__init__(f"Broken lineage after {agent} ({claim_id})")
+        self.agent = agent
+        self.claim_id = claim_id
 
 
 def find_origin(
@@ -26,4 +36,29 @@ def find_origin(
        the origin is the child, not the parent. A modified quote is a new
        claim. (This case is the one that earns the name.)
     """
-    raise NotImplementedError("Build step 3: lineage walk (spec §6)")
+    chain: list[tuple[Claim, ClaimResult]] = [
+        (claim, results_by_id[claim.id])
+    ]
+
+    for _ in range(len(claims_by_id)):
+        current_claim, current_result = chain[-1]
+        parent_id = current_claim.derived_from
+        if parent_id is None:
+            break
+
+        parent_claim = claims_by_id.get(parent_id)
+        parent_result = results_by_id.get(parent_id)
+        if parent_claim is None or parent_result is None:
+            raise BrokenLineageError(current_result.agent, current_claim.id)
+
+        chain.append((parent_claim, parent_result))
+    else:
+        current_claim, current_result = chain[-1]
+        raise BrokenLineageError(current_result.agent, current_claim.id)
+
+    origin_claim, origin_result = chain[-1]
+    for child_claim, child_result in reversed(chain[:-1]):
+        if normalize(child_claim.text) != normalize(origin_claim.text):
+            origin_claim, origin_result = child_claim, child_result
+
+    return origin_result.agent, origin_claim.id
