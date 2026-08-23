@@ -74,6 +74,19 @@ def test_agents_with_zero_failures_still_appear():
     assert "summarizer          0 claims     0 FAILED" in report
 
 
+def test_broken_lineage_is_not_reported_as_originated_here():
+    monitor = Monitor({"contract.txt": "real clause"})
+    monitor.check(
+        "summarizer",
+        [Claim("c_001", "real clause", "contract.txt", derived_from="missing")],
+    )
+
+    report = monitor.report()
+
+    assert "lineage broken after: summarizer (c_001)" in report
+    assert "originated here" not in report
+
+
 @STEP_5
 def test_json_report_parses_and_carries_source_hashes():
     ...
