@@ -21,7 +21,7 @@ from .models import (
     ClaimResult,
 )
 from .normalize import normalize, source_hash
-from .report import render_text
+from .report import render_json, render_text
 
 
 class Monitor:
@@ -138,5 +138,13 @@ class Monitor:
                 self._agents,
             )
         if format == "json":
-            raise NotImplementedError("Build step 5: JSON report (spec §7)")
+            claims_by_id = {
+                claim_id: claim for claim_id, (_, claim) in self._claims.items()
+            }
+            return render_json(
+                self._results,
+                self._source_hashes,
+                claims_by_id,
+                self._agents,
+            )
         raise ValueError("format must be 'text' or 'json'")
