@@ -7,7 +7,12 @@ helper will miss things. It never affects a verdict.
 
 from __future__ import annotations
 
+import re
+
 from .models import Claim
+
+
+_QUOTED_SPAN = re.compile(r'"([^"\n]+)"|“([^”\n]+)”')
 
 
 def quoted_spans(message: str, source: str) -> list[Claim]:
@@ -17,4 +22,14 @@ def quoted_spans(message: str, source: str) -> list[Claim]:
     Returned claims have generated ids, the given ``source``, and no
     ``derived_from`` — lineage is the caller's knowledge, not this helper's.
     """
-    raise NotImplementedError("Build step 6: quoted_spans (spec §4)")
+    claims = []
+    for index, match in enumerate(_QUOTED_SPAN.finditer(message), start=1):
+        text = match.group(1) if match.group(1) is not None else match.group(2)
+        claims.append(
+            Claim(
+                id=f"c_{index:03d}",
+                text=text,
+                source=source,
+            )
+        )
+    return claims
