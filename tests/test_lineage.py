@@ -82,3 +82,30 @@ def test_reworded_quote_originates_at_the_child_not_the_parent():
     assert parent.status == "PASSED"
     assert child.reason == NOT_IN_SOURCE
     assert (child.origin_agent, child.origin_claim_id) == ("editor", "c_002")
+
+
+def test_reworded_failed_parent_still_originates_at_child():
+    monitor = Monitor({"contract.txt": "The term is six months."})
+    monitor.check(
+        "researcher", [Claim("c_001", "twelve months", "contract.txt")]
+    )
+
+    child = monitor.check(
+        "editor",
+        [Claim("c_002", "twenty-four months", "contract.txt", derived_from="c_001")],
+    )[0]
+
+    assert child.reason == NOT_IN_SOURCE
+    assert (child.origin_agent, child.origin_claim_id) == ("editor", "c_002")
+
+
+def test_mixed_status_cycle_is_broken_before_origin_attribution():
+    monitor = Monitor({"contract.txt": "The real clause."})
+    claims = [
+        Claim("c_001", "invented clause", "contract.txt", derived_from="c_002"),
+        Claim("c_002", "real clause", "contract.txt", derived_from="c_001"),
+    ]
+
+    results = monitor.check("researcher", claims)
+
+    assert all(result.reason == BROKEN_LINEAGE for result in results)
