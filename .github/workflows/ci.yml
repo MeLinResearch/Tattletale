@@ -19,4 +19,4 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - run: make setup
       - run: make test
-      # `make demo` joins CI once build step 7 lands (spec §9).
+      - run: make demo
