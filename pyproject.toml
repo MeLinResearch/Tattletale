@@ -1,6 +1,6 @@
 [project]
 name = "tattletale"
-version = "0.1.0.dev0"
+version = "0.1.0"
 description = "Origin tracing for agent-generated claims. Verifies quotation, not correctness."
 readme = "README.md"
 license = { file = "LICENSE" }
