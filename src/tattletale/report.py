@@ -7,7 +7,7 @@ in a stable shape for machine consumers.
 
 from __future__ import annotations
 
-from .models import FAILED, Claim, ClaimResult
+from .models import BROKEN_LINEAGE, FAILED, Claim, ClaimResult
 from .normalize import normalize
 
 
@@ -52,7 +52,12 @@ def render_text(
                     f"            {result.reason}",
                 ]
             )
-            if (
+            if result.reason == BROKEN_LINEAGE:
+                lines.append(
+                    "            lineage broken after: "
+                    f"{result.origin_agent} ({result.origin_claim_id})"
+                )
+            elif (
                 result.origin_agent == result.agent
                 and result.origin_claim_id == result.claim_id
             ):
