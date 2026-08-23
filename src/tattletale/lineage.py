@@ -7,6 +7,7 @@ walk needs only the claims and results already recorded by the Monitor.
 from __future__ import annotations
 
 from .models import Claim, ClaimResult
+from .normalize import normalize
 
 
 class BrokenLineageError(Exception):
@@ -35,23 +36,29 @@ def find_origin(
        the origin is the child, not the parent. A modified quote is a new
        claim. (This case is the one that earns the name.)
     """
-    current_claim = claim
-    current_result = results_by_id[claim.id]
+    chain: list[tuple[Claim, ClaimResult]] = [
+        (claim, results_by_id[claim.id])
+    ]
 
     for _ in range(len(claims_by_id)):
+        current_claim, current_result = chain[-1]
         parent_id = current_claim.derived_from
         if parent_id is None:
-            return current_result.agent, current_claim.id
+            break
 
         parent_claim = claims_by_id.get(parent_id)
         parent_result = results_by_id.get(parent_id)
         if parent_claim is None or parent_result is None:
             raise BrokenLineageError(current_result.agent, current_claim.id)
 
-        if current_result.status == "FAILED" and parent_result.status == "PASSED":
-            return current_result.agent, current_claim.id
+        chain.append((parent_claim, parent_result))
+    else:
+        current_claim, current_result = chain[-1]
+        raise BrokenLineageError(current_result.agent, current_claim.id)
 
-        current_claim = parent_claim
-        current_result = parent_result
+    origin_claim, origin_result = chain[-1]
+    for child_claim, child_result in reversed(chain[:-1]):
+        if normalize(child_claim.text) != normalize(origin_claim.text):
+            origin_claim, origin_result = child_claim, child_result
 
-    raise BrokenLineageError(current_result.agent, current_claim.id)
+    return origin_result.agent, origin_claim.id
