@@ -7,7 +7,16 @@ and the report renderers. A Monitor lives for one run — no persistence
 
 from __future__ import annotations
 
-from .models import Claim, ClaimResult
+from .models import (
+    EMPTY_QUOTE,
+    FAILED,
+    NOT_IN_SOURCE,
+    PASSED,
+    UNKNOWN_SOURCE,
+    Claim,
+    ClaimResult,
+)
+from .normalize import normalize, source_hash
 
 
 class Monitor:
@@ -26,7 +35,15 @@ class Monitor:
         ``sources`` maps document name to raw text. Each source is normalized
         (spec §5.1) and hashed exactly once, here.
         """
-        raise NotImplementedError("Build step 2: Monitor (spec §4)")
+        self._sources: dict[str, str] = {}
+        self._source_hashes: dict[str, str] = {}
+        for name, text in sources.items():
+            normalized = normalize(text)
+            self._sources[name] = normalized
+            self._source_hashes[name] = source_hash(normalized)
+
+        self._claims: dict[str, tuple[str, Claim]] = {}
+        self._results: list[ClaimResult] = []
 
     def check(self, agent: str, claims: list[Claim]) -> list[ClaimResult]:
         """Validate each claim, record the result, return the result list.
@@ -35,7 +52,30 @@ class Monitor:
         in spec §5.2; origin attribution follows the lineage walk in spec §6
         (build step 3).
         """
-        raise NotImplementedError("Build step 2: Monitor.check (spec §4, §5)")
+        batch_results = []
+
+        for claim in claims:
+            quote = normalize(claim.text)
+            if not quote:
+                status, reason = FAILED, EMPTY_QUOTE
+            elif claim.source not in self._sources:
+                status, reason = FAILED, UNKNOWN_SOURCE
+            elif quote not in self._sources[claim.source]:
+                status, reason = FAILED, NOT_IN_SOURCE
+            else:
+                status, reason = PASSED, None
+
+            result = ClaimResult(
+                claim_id=claim.id,
+                agent=agent,
+                status=status,
+                reason=reason,
+            )
+            self._claims[claim.id] = (agent, claim)
+            self._results.append(result)
+            batch_results.append(result)
+
+        return batch_results
 
     def report(self, format: str = "text") -> str:
         """Render accumulated results as ``text`` (step 4) or ``json`` (step 5).

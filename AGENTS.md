@@ -44,7 +44,7 @@ placeholder tests: implementing a step means **un-skipping and completing its
 tests**, then making them pass. Do not implement ahead of the tests.
 
 - [x] Step 1 — normalizer (`tests/test_normalize.py`)
-- [ ] Step 2 — `Monitor.check` + reason codes, no lineage (`tests/test_check.py`)
+- [x] Step 2 — `Monitor.check` + reason codes, no lineage (`tests/test_check.py`)
 - [ ] Step 3 — lineage walk, three edge cases (`tests/test_lineage.py`)
 - [ ] Step 4 — text report (`tests/test_report.py`)
 - [ ] Step 5 — JSON report (`tests/test_report.py`)
