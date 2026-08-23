@@ -5,10 +5,9 @@ not correctness**: it checks that a quoted span actually appears in the source
 document, and when it doesn't, it names the agent that first introduced it —
 not just the agent that last repeated it.
 
-> **Status: scaffolding.** The structure, data model, and tests are laid out;
-> the implementation follows the build order in
-> [ARCHITECTURE.md](ARCHITECTURE.md). See [AGENTS.md](AGENTS.md) if you are an
-> agent working on this repo.
+> **Status: v0.1 implementation complete.** The deterministic checker, lineage
+> tracing, text and JSON reports, quote helper, demo, and adversarial suite are
+> implemented against the frozen [architecture](ARCHITECTURE.md).
 
 ## Why
 
@@ -22,12 +21,14 @@ invented it.
 ## What it looks like
 
 ```python
-from tattletale import Monitor
+from tattletale import Claim, Monitor
 
 tt = Monitor({"contract.pdf": contract_text})
 
-tt.check(agent="researcher", claims=[...])
-tt.check(agent="summarizer", claims=[...])
+tt.check(
+    agent="researcher",
+    claims=[Claim("c_001", "renews every 12 months", "contract.pdf")],
+)
 
 print(tt.report())
 ```
@@ -45,6 +46,15 @@ summarizer          3 claims     2 FAILED
 
 Three methods — `Monitor(sources)`, `check(agent, claims)`,
 `report(format="text")` — are the whole library.
+
+Use `report(format="json")` for a deterministic machine-readable record. It
+contains summary counts, normalized source hashes, per-agent counts, and every
+passing and failing claim with lineage fields.
+
+For unstructured messages, the optional helper
+`tattletale.extract.quoted_spans(message, source)` creates deterministic
+`Claim` objects from straight or curly double-quoted spans. It is deliberately
+best-effort and never participates in verdicts.
 
 ## Design in one breath
 
@@ -66,7 +76,7 @@ Full design, data model, reason codes, and edge cases:
 ```bash
 make setup   # editable install with dev extras
 make test    # pytest
-make demo    # 3-agent pipeline demo (build step 7)
+make demo    # runnable 3-agent pipeline with a planted fabrication
 ```
 
 Requires Python 3.10+ (developed on 3.12). The library itself has zero

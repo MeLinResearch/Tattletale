@@ -7,6 +7,8 @@ in a stable shape for machine consumers.
 
 from __future__ import annotations
 
+import json
+
 from .models import BROKEN_LINEAGE, FAILED, Claim, ClaimResult
 from .normalize import normalize
 
@@ -74,9 +76,48 @@ def render_text(
 def render_json(
     results: list[ClaimResult],
     source_hashes: dict[str, str],
+    claims_by_id: dict[str, Claim],
+    agents: list[str],
 ) -> str:
     """Render the JSON report (spec §7): same content as text, plus the
     source hash and every passing claim. The shape is a public contract —
     once step 5 lands, changing it is a breaking change.
     """
-    raise NotImplementedError("Build step 5: JSON report (spec §7)")
+    failed = sum(result.status == FAILED for result in results)
+    payload = {
+        "summary": {"claims": len(results), "failed": failed},
+        "sources": {
+            name: {"sha256": digest, "normalized": True}
+            for name, digest in source_hashes.items()
+        },
+        "agents": [
+            {
+                "agent": agent,
+                "claims": sum(result.agent == agent for result in results),
+                "failed": sum(
+                    result.agent == agent and result.status == FAILED
+                    for result in results
+                ),
+            }
+            for agent in agents
+        ],
+        "results": [],
+    }
+
+    for result in results:
+        claim = claims_by_id[result.claim_id]
+        payload["results"].append(
+            {
+                "claim_id": result.claim_id,
+                "agent": result.agent,
+                "status": result.status,
+                "reason": result.reason,
+                "source": claim.source,
+                "quote": normalize(claim.text),
+                "derived_from": claim.derived_from,
+                "origin_agent": result.origin_agent,
+                "origin_claim_id": result.origin_claim_id,
+            }
+        )
+
+    return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
