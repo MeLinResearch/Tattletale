@@ -47,10 +47,10 @@ tests**, then making them pass. Do not implement ahead of the tests.
 - [x] Step 2 — `Monitor.check` + reason codes, no lineage (`tests/test_check.py`)
 - [x] Step 3 — lineage walk, three edge cases (`tests/test_lineage.py`)
 - [x] Step 4 — text report (`tests/test_report.py`)
-- [ ] Step 5 — JSON report (`tests/test_report.py`)
-- [ ] Step 6 — `extract.quoted_spans` (`tests/test_extract.py`)
-- [ ] Step 7 — demo pipeline (`demo/demo.py`, then wire `make demo` into CI)
-- [ ] Step 8 — adversarial suite (`tests/test_adversarial.py`)
+- [x] Step 5 — JSON report (`tests/test_report.py`)
+- [x] Step 6 — `extract.quoted_spans` (`tests/test_extract.py`)
+- [x] Step 7 — demo pipeline (`demo/demo.py`, then wire `make demo` into CI)
+- [x] Step 8 — adversarial suite (`tests/test_adversarial.py`)
 
 Check items off in this file as you complete them, in the same commit as the
 implementation.
