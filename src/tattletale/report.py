@@ -30,10 +30,12 @@ def render_text(
     - agents with zero failures (or zero claims) still appear
     """
     failed = sum(result.status == FAILED for result in results)
-    lines = [f"TATTLETALE    {len(results)} claims     {failed} failed"]
+    lines = [f"TATTLETALE    {_claims(len(results))}     {failed} failed"]
 
     for name, digest in source_hashes.items():
         lines.append(f"source: {name}       sha256:{digest} (normalized)")
+
+    name_width = max([len(agent) for agent in agents] + [10]) + 10
 
     for agent in agents:
         agent_results = [result for result in results if result.agent == agent]
@@ -41,7 +43,7 @@ def render_text(
         lines.extend(
             [
                 "",
-                f"{agent}          {len(agent_results)} claims     "
+                f"{agent.ljust(name_width)}{_claims(len(agent_results))}     "
                 f"{len(agent_failed)} FAILED",
             ]
         )
@@ -121,3 +123,8 @@ def render_json(
         )
 
     return json.dumps(payload, ensure_ascii=False, indent=2, sort_keys=True)
+
+
+def _claims(count: int) -> str:
+    """``1 claim`` / ``N claims``."""
+    return f"{count} claim" if count == 1 else f"{count} claims"

@@ -38,8 +38,8 @@ def test_agent_blocks_show_per_agent_counts():
 
     report = monitor.report()
 
-    assert "researcher          1 claims     0 FAILED" in report
-    assert "editor          1 claims     1 FAILED" in report
+    assert "researcher          1 claim     0 FAILED" in report
+    assert "editor              1 claim     1 FAILED" in report
 
 
 def test_failed_claims_show_quote_reason_and_origin():
@@ -67,7 +67,7 @@ def test_agents_with_zero_failures_still_appear():
 
     report = monitor.report()
 
-    assert "researcher          1 claims     0 FAILED" in report
+    assert "researcher          1 claim     0 FAILED" in report
     assert "summarizer          0 claims     0 FAILED" in report
 
 
@@ -136,3 +136,15 @@ def test_json_report_is_deterministic_and_includes_zero_claim_agents():
     assert json.loads(first)["agents"] == [
         {"agent": "summarizer", "claims": 0, "failed": 0}
     ]
+
+
+def test_claim_counts_are_pluralized_correctly():
+    monitor = Monitor({"contract.txt": "real clause"})
+    monitor.check("researcher", [Claim("c_001", "real clause", "contract.txt")])
+    monitor.check("editor", [])
+
+    report = monitor.report()
+
+    assert "TATTLETALE    1 claim     0 failed" in report
+    assert "1 claims" not in report
+    assert "editor              0 claims     0 FAILED" in report

@@ -55,7 +55,7 @@ researcher          5 claims     1 FAILED
             NOT_IN_SOURCE
             originated here
 
-editor          5 claims     1 FAILED
+editor              5 claims     1 FAILED
   c_010     "renews automatically every 24 months"
             NOT_IN_SOURCE
             inherited from: researcher (c_005)
