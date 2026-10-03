@@ -1,5 +1,11 @@
 # Tattletale
 
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="assets/tattletale-flow-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset="assets/tattletale-flow-light.svg">
+  <img src="assets/tattletale-flow-light.svg" alt="Tattletale system flow: identical source and quote normalization, exact checks, conditional lineage validation, and failure attribution to the origin agent." width="100%">
+</picture>
+
 Origin tracing for agent-generated claims. Tattletale verifies **quotation,
 not correctness**: it checks that a quoted span actually appears in the source
 document, and when it doesn't, it names the agent that first introduced it —
@@ -60,9 +66,9 @@ best-effort and never participates in verdicts.
 
 - The check is **binary**. A quote is in the normalized source or it is not.
   No similarity scores, no thresholds.
-- **Normalize once, compare exactly.** Deterministic cleanup at load time
-  (whitespace collapse, quote straightening, soft-hyphen repair, NFKC), never
-  fuzzy matching at compare time.
+- **Normalize identically, compare exactly.** Sources are normalized at load;
+  each quote receives the same five rules at check time: whitespace collapse,
+  quote straightening, hyphen repair, NFKC, and trimming. No fuzzy matching.
 - **Lineage is a dictionary.** Each claim may carry `derived_from`; the
   report walks that chain backward to name the origin agent.
 - **No model calls, no dependencies, no persistence.** Arithmetic and string
